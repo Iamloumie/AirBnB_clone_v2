@@ -4,7 +4,6 @@
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.orm import relationship
 
-from models.place import Place
 from models.base_model import Base, BaseModel
 
 
@@ -14,8 +13,8 @@ class City(BaseModel, Base):
     __tablename__ = "cities"
 
     # SQLAlchemy attributes
-    id = Column(String(60), primary_key=True)
     name = Column(String(128), nullable=False)
     state_id = Column(String(60), ForeignKey("states.id"), nullable=False)
 
-    places = relationship("Place", back_populates="city")
+    places = relationship("Place", backref="city",
+                          cascade="all, delete-orphan")

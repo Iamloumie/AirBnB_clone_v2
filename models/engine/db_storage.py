@@ -23,51 +23,29 @@ class DBStorage:
 
     # Public instance methods
     def __init__(self):
-        """Initialize the database storage"""
-        # retrieving values via environment
-        user = os.getenv("HBNB_MYSQL_USER")
-        pwd = os.getenv("HBNB_MYSQL_PWD")
-        host = os.getenv("HBNB_MYSQL_HOST")
-        db = os.getenv("HBNB_MYSQL_DB")
-        env = os.getenv("HBNB_ENV")
+        # Assuming the environment variables for the database connection are set
+        db_user = os.getenv("HBNB_MYSQL_USER")
+        db_pwd = os.getenv("HBNB_MYSQL_PWD")
+        db_host = os.getenv("HBNB_MYSQL_HOST")
+        db_db = os.getenv("HBNB_MYSQL_DB")
 
-        # create engine
-        self.__engine = create_engine(
-            "mysql+mysqldb://{}:{}@{}/{}".format(user, pwd, host, db),
-            pool_pre_ping=True,
-        )
+        # Create the database engine URL
+        db_url = f"mysql+mysqldb://{db_user}:{db_pwd}@{db_host}/{db_db}"
 
-        # drop all tables if in test environment
-        if env == "test":
-            Base.metadata.drop_all(self.__engine)
+        # Create the engine and bind it to the session
+        self.__engine = create_engine(db_url)
+        # Create tables if they don't exist
+        Base.metadata.create_all(self.__engine)
+
+        # Use a scoped session to ensure that sessions are correctly managed
+        db_session = scoped_session(sessionmaker(bind=self.__engine))
+        self.__session = db_session()
 
     def all(self, cls=None):
-        """Query all the objects depending on the class name"""
-        classes = {
-            "User": User,
-            "State": State,
-            "City": City,
-            "Amenity": Amenity,
-            "Place": Place,
-            "Review": Review,
-        }
-        objects = {}
-
-        if cls:
-            # Query specific class
-            query = self.__session.query(cls)
-            for obj in query.all():
-                key = "{}.{}".format(obj.__class__.__name__, obj.id)
-                objects[key] = obj
-        else:
-            # query all classes
-            for class_name, class_type in classes.items():
-                query = self.__session.query(class_type)
-                for obj in query.all():
-                    key = "{}.{}".format(obj.__class__.__name__, obj.id)
-                    objects[key] = obj
-
-        return objects
+        # Now the session should be properly initialized and can be used to query the database
+        query = self.__session.query(
+            cls) if cls else self.__session.query(Base)
+        return query.all()
 
     def new(self, obj):
         """Add object to current database session"""
@@ -86,6 +64,7 @@ class DBStorage:
     def reload(self):
         """Create all tables and current database session"""
         Base.metadata.create_all(self.__engine)
-        session_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
+        session_factory = sessionmaker(
+            bind=self.__engine, expire_on_commit=False)
         session = scoped_session(session_factory)
         self.__session = session()

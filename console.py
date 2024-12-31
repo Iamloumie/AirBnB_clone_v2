@@ -1,7 +1,9 @@
 #!/usr/bin/python3
-""" Console Module """
+"""Console Module"""
+
 import cmd
 import sys
+import os
 
 from models.__init__ import storage
 from models.amenity import Amenity
@@ -11,6 +13,7 @@ from models.place import Place
 from models.review import Review
 from models.state import State
 from models.user import User
+from models.engine.db_storage import DBStorage
 
 
 class HBNBCommand(cmd.Cmd):
@@ -38,6 +41,8 @@ class HBNBCommand(cmd.Cmd):
         "longitude": float,
     }
 
+    storage = DBStorage()
+
     def preloop(self):
         """Prints if isatty is false"""
         if not sys.__stdin__.isatty():
@@ -62,12 +67,12 @@ class HBNBCommand(cmd.Cmd):
             _cls = pline[: pline.find(".")]
 
             # isolate and validate <command>
-            _cmd = pline[pline.find(".") + 1 : pline.find("(")]
+            _cmd = pline[pline.find(".") + 1: pline.find("(")]
             if _cmd not in HBNBCommand.dot_cmds:
                 raise Exception
 
             # if parantheses contain arguments, parse them
-            pline = pline[pline.find("(") + 1 : pline.find(")")]
+            pline = pline[pline.find("(") + 1: pline.find(")")]
             if pline:
                 # partition args: (<id>, [<delim>], [<*args>])
                 pline = pline.partition(", ")  # pline convert to tuple
@@ -148,7 +153,8 @@ class HBNBCommand(cmd.Cmd):
 
                 # Handle string value
                 if value.startswith('"'):
-                    value = value.strip('"').replace("_", " ").replace('\\"', '"')
+                    value = value.strip('"').replace(
+                        "_", " ").replace('\\"', '"')
 
                 # Handle float value
                 elif "." in value:
@@ -244,23 +250,29 @@ class HBNBCommand(cmd.Cmd):
         print("Destroys an individual instance of a class")
         print("[Usage]: destroy <className> <objectId>\n")
 
-    def do_all(self, args):
-        """Shows all objects, or all objects of a class"""
-        print_list = []
+    def do_all(self, arg):
+        """Lists all instances of a given class."""
+        if not arg:
+            print("** class name missing **")
+            return
 
-        if args:
-            args = args.split(" ")[0]  # remove possible trailing args
-            if args not in HBNBCommand.classes:
-                print("** class doesn't exist **")
-                return
-            for k, v in storage._FileStorage__objects.items():
-                if k.split(".")[0] == args:
-                    print_list.append(str(v))
+        # Default to 'fs' (FileStorage) if not set
+        storage_type = os.getenv("HBNB_TYPE_STORAGE") or "fs"
+        all_objs = []
+
+        if storage_type == "db":  # MySQL storage
+            # Assuming storage.all(arg) returns a dictionary
+            all_objs = storage.all(arg).values()
+        elif storage_type == "fs":  # FileStorage
+            for key, val in storage._FileStorage__objects.items():
+                if val.__class__.__name__ == arg:
+                    all_objs.append(val)
         else:
-            for k, v in storage._FileStorage__objects.items():
-                print_list.append(str(v))
+            print(f"Unknown storage type: {storage_type}")
+            return
 
-        print(print_list)
+        for obj in all_objs:
+            print(obj)
 
     def help_all(self):
         """Help information for the all command"""
@@ -322,7 +334,7 @@ class HBNBCommand(cmd.Cmd):
             if args and args[0] == '"':  # check for quoted arg
                 second_quote = args.find('"', 1)
                 att_name = args[1:second_quote]
-                args = args[second_quote + 1 :]
+                args = args[second_quote + 1:]
 
             args = args.partition(" ")
 
@@ -331,7 +343,7 @@ class HBNBCommand(cmd.Cmd):
                 att_name = args[0]
             # check for quoted val arg
             if args[2] and args[2][0] == '"':
-                att_val = args[2][1 : args[2].find('"', 1)]
+                att_val = args[2][1: args[2].find('"', 1)]
 
             # if att_val was not quoted arg
             if not att_val and args[2]:

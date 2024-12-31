@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """This module instantiates the storage object"""
+
 import os
 
 # Conditional depending of the values of the environment variable
