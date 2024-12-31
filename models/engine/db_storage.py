@@ -4,7 +4,7 @@
 import os
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessiomaker
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from models.amenity import Amenity
 from models.base_model import Base
@@ -86,6 +86,6 @@ class DBStorage:
     def reload(self):
         """Create all tables and current database session"""
         Base.metadata.create_all(self.__engine)
-        session_factory = sessiomaker(bind=self.__engine, expire_on_commit=False)
+        session_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
         session = scoped_session(session_factory)
         self.__session = session()

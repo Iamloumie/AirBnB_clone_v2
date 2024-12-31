@@ -1,7 +1,10 @@
 #!/usr/bin/python3
-""" State Module for HBNB project """
-from sqlalchemy import Column, String
+"""State Module for HBNB project"""
+
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+import datetime
 
 import models
 from models.base_model import BaseModel, Base
@@ -14,8 +17,13 @@ class State(BaseModel, Base):
     __tablename__ = "states"
 
     # SQLAlchemy attributes
+    id = Column(String(60), primary_key=True)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now)
     name = Column(String(128), nullable=False)
-    cities = relationship("City", backref="state", cascade="all, delete-orphan")
+
+    cities = relationship("City", backref="state",
+                          cascade="all, delete-orphan")
 
     @property
     def cities(self):

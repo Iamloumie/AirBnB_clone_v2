@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 """This module defines a class to manage file storage for hbnb clone"""
+
 import json
+from models.base_model import BaseModel
 
 
 class FileStorage:
@@ -10,16 +12,7 @@ class FileStorage:
     __objects = {}
 
     def all(self, cls=None):
-        """Returns a dictionary of models currently in storage
-
-        Args:
-        cls (class, optional): If specified, filters the result to include
-            only objects of the specified class.
-
-        Returns:
-            dict: A dictionary containing objects in storage.
-        """
-
+        """Returns a dictionary of models currently in storage"""
         if cls:
             if isinstance(cls, str):
                 cls = globals().get(cls)
@@ -73,17 +66,9 @@ class FileStorage:
             pass
 
     def delete(self, obj=None):
-        """
-        Delete obj from __objects if it's inside - if obj is equal to None,
-        the method should not do anything
-        """
-        if obj is None:
-            return
-        obj_to_del = f"{obj.__class.__name__}.{obj.id}"
-
-        try:
-            del FileStorage.__objects[obj_to_del]
-        except AttributeError:
-            pass
-        except KeyboardInterrupt:
-            pass
+        """Public instance method that deletes an entry"""
+        if obj is not None:
+            obj_to_del = f"{obj.__class__.__name__}.{obj.id}"
+            if obj_to_del in self.__objects:
+                del self.__objects[obj_to_del]
+                self.save()
