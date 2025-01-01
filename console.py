@@ -134,6 +134,7 @@ class HBNBCommand(cmd.Cmd):
         if not args:
             print("** class name missing **")
             return
+
         try:
             args = args.split()
             class_name = args[0]
@@ -142,41 +143,57 @@ class HBNBCommand(cmd.Cmd):
                 print("** class doesn't exist **")
                 return
 
-            # create new instance
-            new_instance = HBNBCommand.classes[class_name]()
-
-            # parse parameters starting from args[1]
+            # Parse parameters into a dictionary
+            params = {}
             for param in args[1:]:
                 if "=" not in param:
                     continue
                 key, value = param.split("=", 1)
 
-                # Handle string value
+                # Handle string values
                 if value.startswith('"'):
                     value = value.strip('"').replace(
                         "_", " ").replace('\\"', '"')
-
-                # Handle float value
+                # Handle float values
                 elif "." in value:
                     try:
                         value = float(value)
                     except ValueError:
                         continue
-
-                # Handle integer value
+                # Handle integer values
                 else:
                     try:
                         value = int(value)
                     except ValueError:
                         continue
+                params[key] = value
 
-                setattr(new_instance, key, value)
+            # Validate required parameters
+            if class_name == "State" and "name" not in params:
+                print("** name is required for State **")
+                return
 
+            if class_name == "City":
+                if "state_id" not in params:
+                    print("** state_id is required for City **")
+                    return
+                if "name" not in params:
+                    print("** name is required for City **")
+                    return
+
+                # Verify state_id exists
+                state = storage.get("State", params["state_id"])
+                if not state:
+                    print("** state_id does not exist **")
+                    return
+
+            # Create and save the instance
+            new_instance = HBNBCommand.classes[class_name](**params)
             new_instance.save()
             print(new_instance.id)
 
         except Exception as e:
-            print("** class doesn't exist **")
+            print(f"** Error: {str(e)} **")
             return
 
     def help_create(self):
@@ -250,29 +267,21 @@ class HBNBCommand(cmd.Cmd):
         print("Destroys an individual instance of a class")
         print("[Usage]: destroy <className> <objectId>\n")
 
-    def do_all(self, arg):
-        """Lists all instances of a given class."""
-        if not arg:
-            print("** class name missing **")
-            return
+    def do_all(self, args):
+        """Lists all instances of a given class"""
+        try:
+            if not args:
+                objects = storage.all()
+            else:
+                class_name = args.split()[0]
+                if class_name not in HBNBCommand.classes:
+                    print("** class doesn't exist **")
+                    return
+                objects = storage.all(class_name)
 
-        # Default to 'fs' (FileStorage) if not set
-        storage_type = os.getenv("HBNB_TYPE_STORAGE") or "fs"
-        all_objs = []
-
-        if storage_type == "db":  # MySQL storage
-            # Assuming storage.all(arg) returns a dictionary
-            all_objs = storage.all(arg).values()
-        elif storage_type == "fs":  # FileStorage
-            for key, val in storage._FileStorage__objects.items():
-                if val.__class__.__name__ == arg:
-                    all_objs.append(val)
-        else:
-            print(f"Unknown storage type: {storage_type}")
-            return
-
-        for obj in all_objs:
-            print(obj)
+            print([str(obj) for obj in objects.values()])
+        except Exception as e:
+            print(f"** Error: {str(e)} **")
 
     def help_all(self):
         """Help information for the all command"""

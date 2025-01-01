@@ -17,13 +17,19 @@ class State(BaseModel, Base):
     __tablename__ = "states"
 
     # SQLAlchemy attributes
-    id = Column(String(60), primary_key=True)
+    id = Column(String(128), primary_key=True)
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, default=datetime.datetime.now)
     name = Column(String(128), nullable=False)
 
     cities = relationship("City", backref="state",
                           cascade="all, delete-orphan")
+
+    def __init__(self, *args, **kwargs):
+        """Initialize state"""
+        super().__init__(*args, **kwargs)
+        if not kwargs.get("name"):
+            raise ValueError("State name is required")
 
     @property
     def cities(self):

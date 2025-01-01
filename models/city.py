@@ -18,3 +18,11 @@ class City(BaseModel, Base):
 
     places = relationship("Place", backref="city",
                           cascade="all, delete-orphan")
+
+    def __init__(self, *args, **kwargs):
+        """Initialize city"""
+        super().__init__(*args, **kwargs)
+        if not kwargs.get("name"):
+            raise ValueError("City name is required")
+        if not kwargs.get("state_id"):
+            raise ValueError("state_id is required")

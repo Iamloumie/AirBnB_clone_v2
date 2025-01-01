@@ -42,10 +42,32 @@ class DBStorage:
         self.__session = db_session()
 
     def all(self, cls=None):
-        # Now the session should be properly initialized and can be used to query the database
-        query = self.__session.query(
-            cls) if cls else self.__session.query(Base)
-        return query.all()
+        """Query on the current database session"""
+        classes = {
+            "State": State,
+            "City": City,
+            "User": User,
+            "Place": Place,
+            "Review": Review,
+            "Amenity": Amenity,
+        }
+
+        results = {}
+        if cls:
+            if isinstance(cls, str):
+                cls = classes.get(cls)
+            if cls:
+                objs = self.__session.query(cls).all()
+                for obj in objs:
+                    key = f"{obj.__class__.__name__}.{obj.id}"
+                    results[key] = obj
+        else:
+            for class_name in classes:
+                objs = self.__session.query(classes[class_name]).all()
+                for obj in objs:
+                    key = f"{obj.__class__.__name__}.{obj.id}"
+                    results[key] = obj
+        return results
 
     def new(self, obj):
         """Add object to current database session"""
