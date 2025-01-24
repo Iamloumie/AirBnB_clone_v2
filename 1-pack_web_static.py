@@ -6,6 +6,7 @@ of the AirBnB Clone repo, using the function do_pack.
 """
 
 from datetime import datetime
+from typing import Mapping
 from fabric.api import local
 from os.path import isdir
 
